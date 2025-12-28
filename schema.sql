@@ -1,0 +1,51 @@
+CREATE TABLE IF NOT EXISTS Customer (
+    CustomerID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Name TEXT NOT NULL,
+    Phone TEXT
+);
+
+CREATE TABLE IF NOT EXISTS MenuItem (
+    ItemID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Name TEXT NOT NULL,
+    Price REAL NOT NULL CHECK (Price >= 0),
+    Category TEXT
+);
+
+CREATE TABLE IF NOT EXISTS CafeOrder (
+    OrderID INTEGER PRIMARY KEY AUTOINCREMENT,
+    CustomerID INTEGER,
+    OrderDate TEXT DEFAULT CURRENT_DATE,
+    Status TEXT,
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+);
+
+CREATE TABLE IF NOT EXISTS OrderDetail (
+    DetailID INTEGER PRIMARY KEY AUTOINCREMENT,
+    OrderID INTEGER,
+    ItemID INTEGER,
+    Quantity INTEGER CHECK (Quantity > 0),
+    Subtotal REAL,
+    FOREIGN KEY (OrderID) REFERENCES CafeOrder(OrderID),
+    FOREIGN KEY (ItemID) REFERENCES MenuItem(ItemID)
+);
+
+CREATE TABLE IF NOT EXISTS Payment (
+    PaymentID INTEGER PRIMARY KEY AUTOINCREMENT,
+    OrderID INTEGER UNIQUE,
+    Amount REAL,
+    Method TEXT,
+    PaymentDate TEXT DEFAULT CURRENT_DATE,
+    FOREIGN KEY (OrderID) REFERENCES CafeOrder(OrderID)
+);
+
+CREATE TRIGGER IF NOT EXISTS trg_calc_subtotal
+BEFORE INSERT ON OrderDetail
+FOR EACH ROW
+BEGIN
+    SELECT
+        NEW.Subtotal = (
+            SELECT Price * NEW.Quantity
+            FROM MenuItem
+            WHERE ItemID = NEW.ItemID
+        );
+END;
